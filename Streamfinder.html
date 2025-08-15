@@ -1,0 +1,2775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streaming Content Browser</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6a5acd;
+            --primary-dark: #483d8b;
+            --secondary: #ff6b6b;
+            --dark: #0f0f1a;
+            --dark-light: #1a1a2e;
+            --light: #ffffff;
+            --gray: #cccccc;
+            --gray-dark: #2a2a40;
+            --rating: #f5c518;
+        }
+
+        * {
+            box-sizing: border;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh; /* Added for scroll fix */
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--gray-dark);
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .logo i {
+            font-size: 1.8rem;
+        }
+
+        .search-container {
+            flex-grow: 1;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 30px;
+            border: none;
+            background-color: var(--dark-light);
+            color: var(--light);
+            font-size: 1rem;
+            padding-left: 45px;
+            transition: all 0.3s;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary);
+            background-color: var(--dark);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--gray);
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: var(--dark-light);
+            border-radius: 0 0 10px 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-result-item {
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .search-result-item:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .search-result-poster {
+            width: 40px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .search-result-info {
+            flex: 1;
+        }
+
+        .search-result-title {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .search-result-meta {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .media-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .media-tab {
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: none;
+            background-color: transparent;
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .media-tab.active {
+            color: var(--light);
+            background-color: var(--primary);
+        }
+
+        .media-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 3px;
+            background-color: var(--primary);
+            border-radius: 3px;
+        }
+
+        .filters-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            align-items: center;
+        }
+
+        .filter-group {
+            position: relative;
+        }
+
+        .filter-label {
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background-color: var(--dark);
+            padding: 0 5px;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        select.filter-select {
+            padding: 10px 15px;
+            padding-right: 35px;
+            border-radius: 20px;
+            border: 1px solid var(--gray-dark);
+            background-color: var(--dark-light);
+            color: var(--light);
+            cursor: pointer;
+            appearance: none;
+            min-width: 180px;
+            transition: all 0.3s;
+        }
+
+        select.filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .filter-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--gray);
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .media-card {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+            aspect-ratio: 2/3;
+        }
+
+        .media-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .media-poster {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+
+        .media-card:hover .media-poster {
+            transform: scale(1.1);
+        }
+
+        .media-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+            padding: 15px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .media-card:hover .media-overlay {
+            opacity: 1;
+        }
+
+        .media-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 1rem;
+        }
+
+        .media-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .media-type-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 50px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: var(--dark);
+            min-height: 100vh;
+            width: 100%;
+            position: relative;
+        }
+
+        .close-modal {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--gray);
+            z-index: 1001;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .close-modal:hover {
+            color: var(--light);
+            transform: rotate(90deg);
+        }
+
+        .media-header {
+            position: relative;
+            height: 70vh;
+            min-height: 500px;
+            overflow: hidden;
+        }
+
+        .media-backdrop {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.5);
+        }
+
+        .media-header-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 40px;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+            display: flex;
+            gap: 30px;
+            align-items: flex-end;
+        }
+
+        .media-poster-large {
+            width: 300px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform: translateY(50px);
+            border: 3px solid var(--dark-light);
+        }
+
+        .media-header-info {
+            flex: 1;
+            transform: translateY(50px);
+        }
+
+        .media-title-large {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: white;
+        }
+
+        .media-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .media-rating-large {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--rating);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .media-year {
+            color: var(--gray);
+        }
+
+        .media-runtime {
+            color: var(--gray);
+        }
+
+        .media-overview {
+            margin-bottom: 20px;
+            line-height: 1.7;
+            max-width: 800px;
+        }
+
+        .media-genres {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .genre-tag {
+            padding: 5px 15px;
+            background-color: var(--primary);
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        .content-sections {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--gray-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+        .providers-container {
+            background-color: var(--dark-light);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .provider-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 15px;
+        }
+
+        .provider-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px; /* Adjusted gap */
+        }
+
+        .provider-main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            width: 100%; /* Ensure it takes full width of item for click area */
+        }
+
+        .provider-logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            background-color: var(--dark);
+            padding: 5px;
+        }
+
+        .provider-name {
+            font-size: 0.7rem;
+            text-align: center;
+        }
+
+        .provider-type {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+
+        .provider-tech-btn {
+            background: var(--primary-dark);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 5px 10px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .provider-tech-btn:hover {
+            background: var(--primary);
+        }
+
+        .tech-details-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .tech-details-content {
+            background: var(--dark-light);
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .close-tech-modal {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .tech-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .tech-detail-item {
+            background: var(--dark);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .tech-detail-label {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 0.8rem;
+        }
+
+        .tech-detail-value {
+            color: var(--light);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .country-providers {
+            margin-top: 20px;
+            background-color: var(--dark-light);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .country-provider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .country-provider-title {
+            font-weight: bold;
+        }
+
+        .country-provider-content {
+            display: none;
+            padding-top: 10px;
+        }
+
+        .country-provider-content.active {
+            display: block;
+        }
+
+        .load-more {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+
+        .load-more:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+            padding: 20px;
+            align-items: center;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .pagination button:hover:not(:disabled) {
+            background-color: var(--primary-dark);
+        }
+        .pagination button:disabled {
+            background-color: var(--gray-dark);
+            cursor: not-allowed;
+        }
+        .pagination span {
+            font-weight: bold;
+            color: var(--light);
+        }
+
+        .technical-details-section {
+            background-color: var(--dark-light);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .technical-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+        .detail-value {
+            color: var(--gray);
+        }
+
+        .search-result-description {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-top: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .rating-tooltip.imdb-only {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--light);
+        }
+
+        .media-card:hover .rating-tooltip.imdb-only {
+            opacity: 1;
+        }
+
+        .rating-tooltip.imdb-only .rating-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 0;
+        }
+
+        .rating-tooltip.imdb-only .imdb-logo-small {
+            height: 16px;
+            width: auto;
+        }
+
+        .rating-tooltip.imdb-only .rating-value {
+            color: var(--light);
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .media-ratings {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .rating-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--dark-light);
+            padding: 8px 12px;
+            border-radius: 20px;
+        }
+
+        .rating-item img {
+            height: 20px;
+            width: auto;
+        }
+
+        .rating-item span {
+            font-weight: bold;
+            color: var(--light);
+        }
+
+        .rating-item small {
+            font-size: 0.7rem;
+            color: var(--gray);
+        }
+
+        @media (max-width: 1200px) {
+            .media-header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .media-poster-large {
+                width: 200px;
+                transform: translateY(0);
+            }
+
+            .media-header-info {
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 992px) {
+            .content-sections {
+                grid-template-columns: 1fr;
+            }
+
+            .media-header {
+                height: auto;
+                min-height: auto;
+            }
+
+            .media-header-content {
+                position: relative;
+                background: linear-gradient(transparent, var(--dark));
+                padding: 20px;
+            }
+
+            .media-poster-large {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-container {
+                max-width: 100%;
+            }
+
+            .media-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .media-title-large {
+                font-size: 1.8rem;
+            }
+            .content-sections {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .media-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 15px;
+            }
+
+            .filters-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            select.filter-select {
+                width: 100%;
+            }
+            .media-header-content {
+                padding: 15px;
+            }
+        }
+
+        .season-item {
+            background-color: var(--dark-light);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        .season-item:hover {
+            background-color: var(--primary-dark);
+        }
+        .season-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 10px;
+        }
+        .episode-item {
+            background-color: var(--dark);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--primary);
+        }
+        .episode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .episode-description {
+            padding: 10px;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 5px;
+            margin-top: 8px;
+        }
+        .seasons-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 40px 0;
+        }
+        .seasons-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--dark);
+            border-radius: 10px;
+            padding: 30px;
+            position: relative;
+        }
+        .close-seasons-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--gray);
+            transition: all 0.3s;
+        }
+        .close-seasons-modal:hover {
+            color: var(--light);
+            transform: rotate(90deg);
+        }
+        .seasons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .season-card {
+            background: var(--dark-light);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+        .season-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        .season-poster {
+            width: 100%;
+            height: 350px;
+            object-fit: cover;
+        }
+        .season-info {
+            padding: 15px;
+        }
+        .season-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+        .season-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        .episodes-container {
+            margin-top: 40px;
+            display: none;
+        }
+        .episode-list {
+            display: grid;
+            gap: 15px;
+        }
+        .episode-card {
+            background: var(--dark-light);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            gap: 15px;
+            transition: all 0.3s;
+        }
+        .episode-card:hover {
+            background: var(--primary-dark);
+        }
+        .episode-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            min-width: 50px;
+        }
+        .episode-content {
+            flex: 1;
+        }
+        .episode-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+        .episode-description {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        .episode-providers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .provider-badge {
+            background: var(--dark);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .provider-badge img {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        .active-season {
+            border: 2px solid var(--primary);
+        }
+        @media (max-width: 768px) {
+            .seasons-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+
+            .season-poster {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-film"></i>
+                <span>StreamFinder</span>
+            </div>
+
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-bar" placeholder="Search for movies, TV shows..." id="searchInput">
+                <div class="search-results" id="searchResults"></div>
+            </div>
+        </header>
+
+        <div class="media-tabs">
+            <button class="media-tab active" data-type="movie">
+                <i class="fas fa-film"></i> Movies
+            </button>
+            <button class="media-tab" data-type="show">
+                <i class="fas fa-tv"></i> TV Shows
+            </button>
+        </div>
+
+        <div class="filters-section">
+            <div class="filter-group">
+                <span class="filter-label">Provider</span>
+                <select class="filter-select" id="providerSelect">
+                    <option value="">All Providers</option>
+                    <option value="dnp">Disney Plus</option>
+                    <option value="ytr">YouTube Premium</option>
+                    <option value="nfx">Netflix</option>
+                    <option value="prv">Amazon Prime Video</option>
+                    <option value="ply">Google Play Movies</option>
+                    <option value="itu">Apple TV</option>
+                    <option value="mbi">MUBI</option>
+                    <option value="ttp">TV+</option>
+                    <option value="tdt">TOD TV</option>
+                    <option value="cru">Crunchyroll</option>
+                    <option value="dsg">D-Smart Go</option>
+                    <option value="mxx">HBO Max</option>
+                    <option value="amp">Amazon Prime Video</option>
+                    <option value="atp">Apple TV+</option>
+                    <option value="hlu">Hulu</option>
+                    <option value="fuv">fuboTV</option>
+                    <option value="pct">Peacock Premium</option>
+                    <option value="pmp">Paramount Plus</option>
+                    <option value="pst">Paramount+ with Showtime</option>
+                    <option value="tbv">Tubi TV</option>
+                </select>
+                <i class="fas fa-chevron-down filter-icon"></i>
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-label">Country</span>
+                <select class="filter-select" id="countrySelect">
+                    <option value="US">United States</option>
+                    <option value="GB">United Kingdom</option>
+                    <option value="DE">Germany</option>
+                    <option value="FR">France</option>
+                    <option value="IT">Italy</option>
+                    <option value="ES">Spain</option>
+                    <option value="CA">Canada</option>
+                    <option value="AU">Australia</option>
+                    <option value="JP">Japan</option>
+                    <option value="KR">South Korea</option>
+                    <option value="TR">Turkey</option>
+                    <option value="AT">Austria</option>
+                    <option value="BE">Belgium</option>
+                    <option value="BG">Bulgaria</option>
+                    <option value="CH">Switzerland</option>
+                    <option value="CZ">Czech Republic</option>
+                    <option value="DK">Denmark</option>
+                    <option value="FI">Finland</option>
+                    <option value="GR">Greece</option>
+                    <option value="HR">Croatia</option>
+                    <option value="HU">Hungary</option>
+                    <option value="IE">Ireland</option>
+                    <option value="NL">Netherlands</option>
+                    <option value="NO">Norway</option>
+                    <option value="PL">Poland</option>
+                    <option value="PT">Portugal</option>
+                    <option value="RO">Romania</option>
+                    <option value="SE">Sweden</option>
+                    <option value="SK">Slovakia</option>
+                    <option value="AE">United Arab Emirates</option>
+                    <option value="AR">Argentina</option>
+                    <option value="BO">Bolivia</option>
+                    <option value="BR">Brazil</option>
+                    <option value="CL">Chile</option>
+                    <option value="CO">Colombia</option>
+                    <option value="CR">Costa Rica</option>
+                    <option value="EC">Ecuador</option>
+                    <option value="EG">Egypt</option>
+                    <option value="GT">Guatemala</option>
+                    <option value="HK">Hong Kong</option>
+                    <option value="ID">Indonesia</option>
+                    <option value="IL">Israel</option>
+                    <option value="IN">India</option>
+                    <option value="MX">Mexico</option>
+                    <option value="MY">Malaysia</option>
+                    <option value="NZ">New Zealand</option>
+                    <option value="PE">Peru</option>
+                    <option value="PH">Philippines</option>
+                    <option value="PK">Pakistan</option>
+                    <option value="RU">Russia</option>
+                    <option value="SA">Saudi Arabia</option>
+                    <option value="SG">Singapore</option>
+                    <option value="TH">Thailand</option>
+                    <option value="TW">Taiwan</option>
+                    <option value="VE">Venezuela</option>
+                    <option value="ZA">South Africa</option>
+                </select>
+                <i class="fas fa-chevron-down filter-icon"></i>
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-label">Language</span>
+                <select class="filter-select" id="languageSelect">
+                    <option value="en">English</option>
+                    <option value="de">German</option>
+                    <option value="fr">French</option>
+                    <option value="it">Italian</option>
+                    <option value="es">Spanish</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="tr">Turkish</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="ru">Russian</option>
+                    <option value="ar">Arabic</option>
+                    <option value="bg">Bulgarian</option>
+                    <option value="zh">Chinese</option>
+                    <option value="cs">Czech</option>
+                    <option value="da">Danish</option>
+                    <option value="nl">Dutch</option>
+                    <option value="fi">Finnish</option>
+                    <option value="el">Greek</option>
+                    <option value="he">Hebrew</option>
+                    <option value="hi">Hindi</option>
+                    <option value="hu">Hungarian</option>
+                    <option value="id">Indonesian</option>
+                    <option value="ms">Malay</option>
+                    <option value="no">Norwegian</option>
+                    <option value="pl">Polish</option>
+                    <option value="ro">Romanian</option>
+                    <option value="sk">Slovak</option>
+                    <option value="sv">Swedish</option>
+                    <option value="th">Thai</option>
+                    <option value="uk">Ukrainian</option>
+                    <option value="vi">Vietnamese</option>
+                </select>
+                <i class="fas fa-chevron-down filter-icon"></i>
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-label">Genre</span>
+                <select class="filter-select" id="genreSelect">
+                    <option value="">All Genres</option>
+                    <option value="act">Action & Adventure</option>
+                    <option value="crm">Crime</option>
+                    <option value="doc">Documentary</option>
+                    <option value="msc">Music & Musical</option>
+                    <option value="rma">Romance</option>
+                    <option value="scf">Science-Fiction</option>
+                    <option value="war">War & Military</option>
+                    <option value="eur">Made in Europe</option>
+                    <option value="cmy">Comedy</option>
+                    <option value="hst">History</option>
+                    <option value="fml">Kids & Family</option>
+                    <option value="spt">Sport</option>
+                    <option value="wsn">Western</option>
+                    <option value="rly">Reality TV</option>
+                    <option value="ani">Animation</option>
+                    <option value="drm">Drama</option>
+                    <option value="fnt">Fantasy</option>
+                    <option value="hrr">Horror</option>
+                    <option value="trl">Mystery & Thriller</option>
+                </select>
+                <i class="fas fa-chevron-down filter-icon"></i>
+            </div>
+        </div>
+
+        <div class="media-grid" id="mediaGrid">
+            <!-- Content will be loaded here -->
+        </div>
+
+        <div class="pagination" id="paginationControls">
+            <button id="prevPageBtn">Previous</button>
+            <span id="pageInfoSpan">Page 1</span>
+            <button id="nextPageBtn">Next</button>
+        </div>
+
+        <div class="loading-spinner" id="loadingSpinner"></div>
+    </div>
+
+    <div id="mediaModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="mediaDetail">
+                <!-- Detail content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="techDetailsModal" class="tech-details-modal">
+        <div class="tech-details-content">
+            <span class="close-tech-modal">&times;</span>
+            <h3 class="section-title">
+                <i class="fas fa-info-circle"></i> Technical Specifications
+            </h3>
+            <div id="techDetailsContent"></div>
+        </div>
+    </div>
+
+    <div id="seasonsModal" class="seasons-modal">
+        <div class="seasons-container">
+            <span class="close-seasons-modal">&times;</span>
+            <h2 id="seasonsModalTitle" style="font-size: 2rem; margin-bottom: 10px;"></h2>
+            <p id="seasonsModalSubtitle" style="color: var(--gray); margin-bottom: 20px;"></p>
+
+            <div class="seasons-grid" id="seasonsGrid"></div>
+
+            <div class="episodes-container" id="episodesContainer">
+                <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-list"></i> Episodes
+                </h3>
+                <div class="episode-list" id="episodeList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://mpg-cors-proxy.herokuapp.com/https://apis.justwatch.com/graphql';
+        const IMAGE_BASE_URL = 'https://images.justwatch.com';
+
+        const mediaTypeButtons = document.querySelectorAll('.media-tab[data-type]');
+        const providerSelect = document.getElementById('providerSelect');
+        const countrySelect = document.getElementById('countrySelect');
+        const languageSelect = document.getElementById('languageSelect');
+        const genreSelect = document.getElementById('genreSelect');
+        const mediaGrid = document.getElementById('mediaGrid');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const mediaModal = document.getElementById('mediaModal');
+        const mediaDetailContainer = document.getElementById('mediaDetail');
+        const closeModalBtn = document.querySelector('.close-modal');
+        const searchInput = document.getElementById('searchInput');
+        const searchResultsContainer = document.getElementById('searchResults');
+
+        const paginationControls = document.getElementById('paginationControls');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const pageInfoSpan = document.getElementById('pageInfoSpan');
+
+        let currentMediaType = 'movie';
+        let currentProvider = '';
+        let currentCountry = 'US';
+        let currentLanguage = 'en';
+        let currentGenre = '';
+        let currentPage = 1;
+        let pageCursors = [null];
+        let hasNextPage = false;
+        let isLoading = false;
+
+        let currentShowDetails = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupPaginationButtons();
+            fetchPopularTitles('initial');
+
+            providerSelect.addEventListener('change', handleFilterChange);
+            countrySelect.addEventListener('change', handleFilterChange);
+            languageSelect.addEventListener('change', handleFilterChange);
+            genreSelect.addEventListener('change', handleFilterChange);
+        });
+
+        mediaTypeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                mediaTypeButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentMediaType = button.dataset.type;
+                handleFilterChange();
+            });
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            mediaModal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === mediaModal) {
+                mediaModal.style.display = 'none';
+            }
+        });
+
+        searchInput.addEventListener('input', debounce(handleSearch, 500));
+
+        function handleFilterChange() {
+            currentProvider = providerSelect.value;
+            currentCountry = countrySelect.value;
+            currentLanguage = languageSelect.value;
+            currentGenre = genreSelect.value;
+            currentPage = 1;
+            pageCursors = [null];
+            fetchPopularTitles('filterChange');
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function() {
+                const context = this, args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    func.apply(context, args);
+                }, wait);
+            };
+        }
+
+        function showLoading() {
+            loadingSpinner.style.display = 'block';
+            mediaGrid.style.display = 'none';
+            isLoading = true;
+        }
+
+        function hideLoading() {
+            loadingSpinner.style.display = 'none';
+            mediaGrid.style.display = 'grid';
+            isLoading = false;
+        }
+
+        function setupPaginationButtons() {
+            prevPageBtn.addEventListener('click', () => handlePageChange('prev'));
+            nextPageBtn.addEventListener('click', () => handlePageChange('next'));
+            updatePaginationControls();
+        }
+
+        function updatePaginationControls() {
+            prevPageBtn.disabled = (currentPage === 1);
+            nextPageBtn.disabled = !hasNextPage;
+            pageInfoSpan.textContent = `Page ${currentPage}`;
+        }
+
+        function handlePageChange(direction) {
+            if (direction === 'next') {
+                currentPage++;
+            } else if (direction === 'prev') {
+                currentPage--;
+            }
+            fetchPopularTitles('pageChange');
+        }
+
+        async function fetchJustWatchData(query, variables) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': 'justwatch'
+                    },
+                    body: JSON.stringify({
+                        operationName: query.operationName,
+                        query: query.query,
+                        variables: variables
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                return null;
+            }
+        }
+
+        async function fetchPopularTitles(callType) {
+            if (isLoading) return;
+
+            isLoading = true;
+            showLoading();
+
+            let afterCursor = null;
+            if (callType === 'pageChange' || callType === 'initial') {
+                afterCursor = pageCursors[currentPage - 1];
+            } else if (callType === 'filterChange') {
+                mediaGrid.innerHTML = '';
+                currentPage = 1;
+                pageCursors = [null];
+                afterCursor = null;
+            }
+
+            const query = {
+                operationName: "GetPopularTitles",
+                query: `
+                    query GetPopularTitles(
+                        $country: Country!,
+                        $language: Language!,
+                        $first: Int!,
+                        $after: String,
+                        $popularTitlesFilter: TitleFilter!,
+                        $watchNowFilter: WatchNowOfferFilter!,
+                        $popularTitlesSortBy: PopularTitlesSorting!,
+                        $sortRandomSeed: Int!
+                    ) {
+                        popularTitles(
+                            country: $country
+                            filter: $popularTitlesFilter
+                            first: $first
+                            after: $after
+                            sortBy: $popularTitlesSortBy
+                            sortRandomSeed: $sortRandomSeed
+                        ) {
+                            edges {
+                                cursor
+                                node {
+                                    id
+                                    objectType
+                                    content(country: $country, language: $language) {
+                                        title
+                                        fullPath
+                                        posterUrl
+                                        originalReleaseYear
+                                        shortDescription
+                                        scoring {
+                                            imdbScore
+                                            imdbVotes
+                                            tmdbScore
+                                            tmdbPopularity
+                                            jwRating
+                                            tomatoMeter
+                                            certifiedFresh
+                                            __typename
+                                        }
+                                        __typename
+                                    }
+                                    watchNowOffer(country: $country, platform: WEB, filter: $watchNowFilter) {
+                                        package {
+                                            clearName
+                                            __typename
+                                        }
+                                        __typename
+                                    }
+                                    __typename
+                                }
+                                __typename
+                            }
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                                __typename
+                            }
+                            __typename
+                        }
+                    }
+                `
+            };
+
+            const variables = {
+                country: currentCountry,
+                language: currentLanguage,
+                first: 20,
+                popularTitlesSortBy: "POPULAR",
+                sortRandomSeed: 0,
+                after: afterCursor,
+                popularTitlesFilter: {
+                    objectTypes: currentMediaType === 'show' ? ["SHOW"] : ["MOVIE"],
+                    packages: currentProvider ? [currentProvider] : [],
+                    genres: currentGenre ? [currentGenre] : [],
+                    excludeIrrelevantTitles: false
+                },
+                watchNowFilter: {
+                    packages: currentProvider ? [currentProvider] : [],
+                    monetizationTypes: []
+                }
+            };
+
+            try {
+                const data = await fetchJustWatchData(query, variables);
+
+                if (data?.data?.popularTitles) {
+                    if (callType !== 'append') {
+                        mediaGrid.innerHTML = '';
+                    }
+                    displayTitles(data.data.popularTitles.edges);
+
+                    const newEndCursor = data.data.popularTitles.pageInfo.endCursor;
+                    hasNextPage = data.data.popularTitles.pageInfo.hasNextPage;
+
+                    if (pageCursors.length <= currentPage) {
+                        pageCursors[currentPage] = newEndCursor;
+                    } else if (pageCursors[currentPage] !== newEndCursor) {
+                        pageCursors[currentPage] = newEndCursor;
+                    }
+
+                    if (!newEndCursor && hasNextPage) {
+                       // API indicated next page but no cursor was provided. Keep hasNextPage true.
+                    } else if (!newEndCursor && !hasNextPage) {
+                        hasNextPage = false;
+                    }
+
+                } else {
+                    if (currentPage === 1) {
+                        mediaGrid.innerHTML = '<p style="text-align: center; color: var(--gray); grid-column: 1/-1;">No results found.</p>';
+                    }
+                    hasNextPage = false;
+                }
+            } catch (error) {
+                console.error('Error loading titles:', error);
+                if (currentPage === 1) {
+                    mediaGrid.innerHTML = '<p style="text-align: center; color: var(--secondary); grid-column: 1/-1;">Error loading data.</p>';
+                }
+                hasNextPage = false;
+            } finally {
+                hideLoading();
+                updatePaginationControls();
+            }
+        }
+
+        function displayTitles(edges) {
+            edges.forEach(edge => {
+                const node = edge.node;
+                const content = node.content;
+
+                const card = document.createElement('div');
+                card.className = 'media-card';
+                card.dataset.id = node.id;
+                card.dataset.type = node.objectType.toLowerCase();
+
+                const posterUrl = content.posterUrl ?
+                    `${IMAGE_BASE_URL}${content.posterUrl.replace('{profile}', 's592').replace('{format}', 'jpg')}` :
+                    'https://placehold.co/500x750/2a2a40/ffffff?text=No+Poster';
+
+                const imdbRating = content.scoring?.imdbScore;
+                const ratingTooltip = imdbRating ? `
+                    <div class="rating-tooltip imdb-only">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/IMDB_Logo_2016.svg" alt="IMDb Logo" class="imdb-logo-small">
+                        <span class="rating-value">${imdbRating}</span>
+                    </div>
+                ` : '';
+
+                card.innerHTML = `
+                    <img src="${posterUrl}" alt="${content.title}" class="media-poster"
+                         onerror="this.src='https://placehold.co/500x750/2a2a40/ffffff?text=No+Poster'">
+                    <div class="media-overlay">
+                        <div class="media-title">${content.title}</div>
+                        <div class="media-info">
+                            <span>${content.originalReleaseYear || 'N/A'}</span>
+                            ${node.watchNowOffer ? `<span>${node.watchNowOffer.package.clearName}</span>` : ''}
+                        </div>
+                    </div>
+                    <span class="media-type-badge">${node.objectType === 'MOVIE' ? 'Movie' : 'TV Show'}</span>
+                    ${ratingTooltip}
+                `;
+
+                card.addEventListener('click', () => openMediaDetail(node.id, node.objectType));
+                mediaGrid.appendChild(card);
+            });
+        }
+
+        async function openMediaDetail(id, type) {
+            showLoading();
+            mediaModal.style.display = 'block';
+            mediaDetailContainer.innerHTML = '';
+
+            try {
+                const detailQuery = {
+                    operationName: "GetTitleNode",
+                    query: type === 'SHOW' ? `
+                        query GetTitleNode(
+                            $nodeId: ID!,
+                            $language: Language!,
+                            $country: Country!,
+                            $formatPoster: ImageFormat,
+                            $profile: PosterProfile,
+                            $backdropProfile: BackdropProfile,
+                            $platform: Platform! = WEB
+                        ) {
+                            node(id: $nodeId) {
+                                ... on MovieOrShow {
+                                    id
+                                    objectId
+                                    objectType
+                                    content(country: $country, language: $language) {
+                                        title
+                                        fullPath
+                                        originalReleaseYear
+                                        originalReleaseDate
+                                        productionCountries
+                                        runtime
+                                        shortDescription
+                                        genres {
+                                            shortName
+                                            __typename
+                                        }
+                                        externalIds {
+                                            imdbId
+                                            tmdbId
+                                            __typename
+                                        }
+                                        scoring {
+                                            imdbScore
+                                            imdbVotes
+                                            tmdbScore
+                                            tmdbPopularity
+                                            jwRating
+                                            tomatoMeter
+                                            certifiedFresh
+                                            __typename
+                                        }
+                                        posterUrl(profile: $profile, format: $formatPoster)
+                                        backdrops(profile: $backdropProfile, format: $formatPoster) {
+                                            backdropUrl
+                                            __typename
+                                        }
+                                        __typename
+                                    }
+                                    __typename
+                                }
+                                ... on Show {
+                                    totalSeasonCount
+                                    seasons(sortDirection: ASC) {
+                                        id
+                                        objectId
+                                        objectType
+                                        totalEpisodeCount
+                                        availableTo(country: $country, platform: $platform) {
+                                            availableToDate
+                                            package {
+                                                id
+                                                shortName
+                                                __typename
+                                            }
+                                            __typename
+                                        }
+                                        offers(
+                                            country: $country
+                                            platform: WEB
+                                            filter: {monetizationTypes: [BUY, RENT], preAffiliate: true}
+                                        ) {
+                                            package {
+                                                clearName
+                                                shortName
+                                                __typename
+                                            }
+                                            monetizationType
+                                            retailPrice(language: $language)
+                                            retailPriceValue
+                                            __typename
+                                        }
+                                        content(country: $country, language: $language) {
+                                            posterUrl
+                                            seasonNumber
+                                            fullPath
+                                            title
+                                            upcomingReleases {
+                                                releaseDate
+                                                releaseCountDown(country: $country)
+                                                __typename
+                                            }
+                                            isReleased
+                                            originalReleaseYear
+                                            __typename
+                                        }
+                                        __typename
+                                    }
+                                    __typename
+                                }
+                            }
+                        }
+                    ` : `
+                        query GetTitleNode(
+                            $nodeId: ID!,
+                            $language: Language!,
+                            $country: Country!,
+                            $formatPoster: ImageFormat,
+                            $profile: PosterProfile,
+                            $backdropProfile: BackdropProfile
+                        ) {
+                            node(id: $nodeId) {
+                                ... on MovieOrShow {
+                                    id
+                                    objectId
+                                    objectType
+                                    content(country: $country, language: $language) {
+                                        title
+                                        fullPath
+                                        originalReleaseYear
+                                        originalReleaseDate
+                                        productionCountries
+                                        runtime
+                                        shortDescription
+                                        genres {
+                                            shortName
+                                            __typename
+                                        }
+                                        externalIds {
+                                            imdbId
+                                            tmdbId
+                                            __typename
+                                        }
+                                        scoring {
+                                            imdbScore
+                                            imdbVotes
+                                            tmdbScore
+                                            tmdbPopularity
+                                            jwRating
+                                            tomatoMeter
+                                            certifiedFresh
+                                            __typename
+                                        }
+                                        posterUrl(profile: $profile, format: $formatPoster)
+                                        backdrops(profile: $backdropProfile, format: $formatPoster) {
+                                            backdropUrl
+                                            __typename
+                                        }
+                                        __typename
+                                    }
+                                    __typename
+                                }
+                            }
+                        }
+                    `,
+                    variables: {
+                        nodeId: id,
+                        country: currentCountry,
+                        language: currentLanguage,
+                        formatPoster: "JPG",
+                        profile: "S718",
+                        backdropProfile: "S1920",
+                        platform: "WEB"
+                    }
+                };
+
+                const detailData = await fetchJustWatchData(detailQuery, detailQuery.variables);
+
+                if (!detailData?.data?.node) {
+                    throw new Error("Failed to fetch title details");
+                }
+
+                const details = detailData.data.node;
+
+                const offersQuery = {
+                    operationName: "GetTitleOffers",
+                    query: `
+                        query GetTitleOffers(
+                            $nodeId: ID!,
+                            $language: Language!,
+                            $filter: OfferFilter!,
+                            $platform: Platform! = WEB
+                        ) {
+                            node(id: $nodeId) {
+                                ... on MovieOrShowOrSeasonOrEpisode {
+                                    ae: offers(country: AE, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    ar: offers(country: AR, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    at: offers(country: AT, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    au: offers(country: AU, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    be: offers(country: BE, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    br: offers(country: BR, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    ca: offers(country: CA, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    ch: offers(country: CH, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    cl: offers(country: CL, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    co: offers(country: CO, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    cz: offers(country: CZ, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    de: offers(country: DE, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    dk: offers(country: DK, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    ec: offers(country: EC, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    es: offers(country: ES, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    fi: offers(country: FI, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    fr: offers(country: FR, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    gb: offers(country: GB, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    gr: offers(country: GR, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    hk: offers(country: HK, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    hu: offers(country: HU, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    id: offers(country: ID, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    ie: offers(country: IE, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    il: offers(country: IL, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    in: offers(country: IN, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    it: offers(country: IT, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    jp: offers(country: JP, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    kr: offers(country: KR, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    mx: offers(country: MX, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    my: offers(country: MY, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    nl: offers(country: NL, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    no: offers(country: NO, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    nz: offers(country: NZ, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    pe: offers(country: PE, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    ph: offers(country: PH, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    pl: offers(country: PL, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    pt: offers(country: PT, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    ro: offers(country: RO, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    ru: offers(country: RU, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    sa: offers(country: SA, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    se: offers(country: SE, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    sg: offers(country: SG, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    th: offers(country: TH, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    tr: offers(country: TR, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    tw: offers(country: TW, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    us: offers(country: US, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    ve: offers(country: VE, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                    za: offers(country: ZA, platform: $platform, filter: $filter) {
+                                        ...TitleOffer
+                                        __typename
+                                    }
+                                }
+                            }
+                        }
+
+                        fragment TitleOffer on Offer {
+                            id
+                            presentationType
+                            monetizationType
+                            retailPrice(language: $language)
+                            retailPriceValue
+                            currency
+                            lastChangeRetailPriceValue
+                            type
+                            package {
+                                id
+                                packageId
+                                clearName
+                                technicalName
+                                icon(profile: S100)
+                                __typename
+                            }
+                            standardWebURL
+                            elementCount
+                            availableTo
+                            deeplinkRoku: deeplinkURL(platform: ROKU_OS)
+                            subtitleLanguages
+                            videoTechnology
+                            audioTechnology
+                            audioLanguages
+                            __typename
+                        }
+                    `,
+                    variables: {
+                        nodeId: id,
+                        language: currentLanguage,
+                        filter: {
+                            bestOnly: true,
+                            preAffiliate: true
+                        },
+                        platform: "WEB"
+                    }
+                };
+
+                const offersData = await fetchJustWatchData(offersQuery, offersQuery.variables);
+
+                if (!offersData?.data?.node) {
+                    throw new Error("Failed to fetch offers");
+                }
+
+                const offers = offersData.data.node;
+
+                const content = details.content;
+                const backdropUrl = content.backdrops?.length > 0 ?
+                    `${IMAGE_BASE_URL}${content.backdrops[0].backdropUrl}` :
+                    'https://placehold.co/1920x1080/2a2a40/ffffff?text=No+Backdrop';
+
+                const posterUrl = content.posterUrl ?
+                    `${IMAGE_BASE_URL}${content.posterUrl}` :
+                    'https://placehold.co/500x750/2a2a40/ffffff?text=No+Poster';
+
+                const runtime = content.runtime ?
+                    `${Math.floor(content.runtime / 60)}h ${content.runtime % 60}m` :
+                    'N/A';
+
+                const genres = content.genres?.map(genre => {
+                    const genreName = genre.shortName;
+                    const clearName = {
+                        'act': 'Action & Adventure',
+                        'crm': 'Crime',
+                        'doc': 'Documentary',
+                        'msc': 'Music & Musical',
+                        'rma': 'Romance',
+                        'scf': 'Science-Fiction',
+                        'war': 'War & Military',
+                        'eur': 'Made in Europe',
+                        'cmy': 'Comedy',
+                        'hst': 'History',
+                        'fml': 'Kids & Family',
+                        'spt': 'Sport',
+                        'wsn': 'Western',
+                        'rly': 'Reality TV',
+                        'ani': 'Animation',
+                        'drm': 'Drama',
+                        'fnt': 'Fantasy',
+                        'hrr': 'Horror',
+                        'trl': 'Mystery & Thriller'
+                    }[genreName] || genreName;
+
+                    return `<span class="genre-tag">${clearName}</span>`;
+                }).join('') || '';
+
+                const countryOffers = {};
+                for (const [countryCode, offerList] of Object.entries(offers)) {
+                    if (offerList && offerList.length > 0) {
+                        const uniqueOffersForCountry = new Map();
+                        offerList.forEach(offer => {
+                            if (!uniqueOffersForCountry.has(offer.package.id)) {
+                                uniqueOffersForCountry.set(offer.package.id, offer);
+                            } else {
+                                const existing = uniqueOffersForCountry.get(offer.package.id);
+                                const currentQuality = getQualityValue(offer.presentationType);
+                                const existingQuality = getQualityValue(existing.presentationType);
+                                if (currentQuality > existingQuality) {
+                                    uniqueOffersForCountry.set(offer.package.id, offer);
+                                }
+                            }
+                        });
+                        countryOffers[countryCode] = Array.from(uniqueOffersForCountry.values());
+                    }
+                }
+
+                const currentCountryOffers = offers[currentCountry.toLowerCase()] || [];
+
+                const uniqueProvidersForCurrentCountry = new Map();
+                currentCountryOffers.forEach(offer => {
+                    if (!uniqueProvidersForCurrentCountry.has(offer.package.id)) {
+                        uniqueProvidersForCurrentCountry.set(offer.package.id, offer);
+                    } else {
+                        const existing = uniqueProvidersForCurrentCountry.get(offer.package.id);
+                        const currentQuality = getQualityValue(offer.presentationType);
+                        const existingQuality = getQualityValue(existing.presentationType);
+                        if (currentQuality > existingQuality) {
+                            uniqueProvidersForCurrentCountry.set(offer.package.id, offer);
+                        }
+                    }
+                });
+
+                let providersHTML = '';
+                if (uniqueProvidersForCurrentCountry.size > 0) {
+                    providersHTML = `
+                        <div class="providers-container">
+                            <h3 class="section-title">
+                                <i class="fas fa-play-circle"></i> Available On (${getCountryName(currentCountry)})
+                            </h3>
+                            <div class="provider-list">
+                                ${Array.from(uniqueProvidersForCurrentCountry.values()).map(offer => `
+                                    <div class="provider-item">
+                                        <div class="provider-main" onclick="window.open('${offer.standardWebURL}', '_blank')">
+                                            <img src="${IMAGE_BASE_URL}${offer.package.icon.replace('{format}', 'png')}"
+                                                 alt="${offer.package.clearName}" class="provider-logo"
+                                                 onerror="this.src='https://placehold.co/100x100/2a2a40/ffffff?text=Logo'">
+                                            <span class="provider-name">${offer.package.clearName}</span>
+                                            <span class="provider-type">${offer.monetizationType === 'FLATRATE' ? 'Subscription' : offer.monetizationType === 'BUY' ? 'Buy' : 'Rent'}</span>
+                                        </div>
+                                        <button class="provider-tech-btn" data-offer='${JSON.stringify(offer).replace(/'/g, "\\'")}'>
+                                            <i class="fas fa-info-circle"></i> Tech Details
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                } else {
+                    providersHTML = `
+                        <div class="providers-container">
+                            <h3 class="section-title">
+                                <i class="fas fa-play-circle"></i> Available On (${getCountryName(currentCountry)})
+                            </h3>
+                            <div style="padding: 20px; text-align: center; color: var(--gray);">
+                                <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                                <p>This title is not currently available in ${getCountryName(currentCountry)}</p>
+                            </div>
+                        </div>`;
+                }
+
+                const otherCountries = Object.keys(offers).filter(code =>
+                    code !== currentCountry.toLowerCase() && offers[code]?.length > 0
+                );
+
+                const technicalDetailsHTML = `
+                    <div class="technical-details-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-info-circle"></i> Technical Details
+                        </h3>
+                        <div class="technical-details-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">Original Title:</span>
+                                <span class="detail-value">${content.title}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Release Date:</span>
+                                <span class="detail-value">${content.originalReleaseDate || 'N/A'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Production Countries:</span>
+                                <span class="detail-value">${content.productionCountries?.join(', ') || 'N/A'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Runtime:</span>
+                                <span class="detail-value">${runtime}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">IMDB ID:</span>
+                                <span class="detail-value">${content.externalIds?.imdbId || 'N/A'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">TMDB ID:</span>
+                                <span class="detail-value">${content.externalIds?.tmdbId || 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>`;
+
+                mediaDetailContainer.innerHTML = `
+                    <div class="media-header">
+                        <img src="${backdropUrl}" alt="${content.title}" class="media-backdrop"
+                             onerror="this.src='https://placehold.co/1920x1080/2a2a40/ffffff?text=No+Backdrop'">
+                        <div class="media-header-content">
+                            <img src="${posterUrl}" alt="${content.title}" class="media-poster-large"
+                                 onerror="this.src='https://placehold.co/500x750/2a2a40/ffffff?text=No+Poster'">
+                            <div class="media-header-info">
+                                <h1 class="media-title-large">${content.title}</h1>
+                                <div class="media-meta">
+                                    <span class="media-year">${content.originalReleaseYear || 'N/A'}</span>
+                                    <span>•</span>
+                                    <span class="media-runtime">${runtime}</span>
+                                </div>
+                                <div class="media-genres">${genres}</div>
+                                <p class="media-overview">${content.shortDescription || 'No description available.'}</p>
+                                <div class="media-ratings">
+                                    ${content.scoring ? `
+                                        <div class="rating-item">
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/IMDB_Logo_2016.svg" alt="IMDb">
+                                            <span>${content.scoring.imdbScore || 'N/A'}</span>
+                                            <small>${content.scoring.imdbVotes ? formatNumber(content.scoring.imdbVotes) + ' votes' : ''}</small>
+                                        </div>
+                                        <div class="rating-item">
+                                            <img src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_1-5bdc75aaebeb75dc7ae79426ddd9be3b2be1e342510f8202baf6bffa71d7f5c4.svg" alt="TMDb">
+                                            <span>${content.scoring.tmdbScore || 'N/A'}</span>
+                                            <small>${content.scoring.tmdbPopularity ? formatNumber(content.scoring.tmdbPopularity) : ''}</small>
+                                        </div>
+                                        ${content.scoring.tomatoMeter ? `
+                                        <div class="rating-item">
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg" alt="Rotten Tomatoes">
+                                            <span>${content.scoring.tomatoMeter}%</span>
+                                            <small>${content.scoring.certifiedFresh ? 'Certified Fresh' : ''}</small>
+                                        </div>
+                                        ` : ''}
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="content-sections">
+                        <div>
+                            ${providersHTML}
+                            ${otherCountries.length > 0 ? `
+                                <div class="section-title">
+                                    <i class="fas fa-globe"></i> Other Countries
+                                </div>
+                                ${otherCountries.map(countryCode => {
+                                    const offersForThisCountry = countryOffers[countryCode];
+                                    if (offersForThisCountry && offersForThisCountry.length > 0) {
+                                        return `
+                                            <div class="country-providers">
+                                                <div class="country-provider-header">
+                                                    <span class="country-provider-title">${getCountryName(countryCode)}</span>
+                                                    <i class="fas fa-chevron-down"></i>
+                                                </div>
+                                                <div class="country-provider-content">
+                                                    <div class="provider-list">
+                                                        ${offersForThisCountry.map(offer => `
+                                                            <div class="provider-item">
+                                                                <div class="provider-main" onclick="window.open('${offer.standardWebURL}', '_blank')">
+                                                                    <img src="${IMAGE_BASE_URL}${offer.package.icon.replace('{format}', 'png')}"
+                                                                         alt="${offer.package.clearName}" class="provider-logo"
+                                                                         onerror="this.src='https://placehold.co/100x100/2a2a40/ffffff?text=Logo'">
+                                                                    <span class="provider-name">${offer.package.clearName}</span>
+                                                                    <span class="provider-type">${offer.monetizationType === 'FLATRATE' ? 'Subscription' : offer.monetizationType === 'BUY' ? 'Buy' : 'Rent'}</span>
+                                                                </div>
+                                                                <button class="provider-tech-btn" data-offer='${JSON.stringify(offer).replace(/'/g, "\\'")}'>
+                                                                    <i class="fas fa-info-circle"></i> Tech Details
+                                                                </button>
+                                                            </div>
+                                                        `).join('')}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }
+                                    return '';
+                                }).join('')}
+                            ` : ''}
+                        </div>
+                        <div>
+                            ${technicalDetailsHTML}
+                        </div>
+                    </div>
+                `;
+
+                const mediaHeaderInfo = mediaDetailContainer.querySelector('.media-header-info');
+                if (type === 'SHOW' && details.totalSeasonCount > 0) {
+                    mediaHeaderInfo.innerHTML += `
+                        <button id="showSeasonsBtn" class="load-more" style="max-width: 250px; margin-top: 20px;">
+                            <i class="fas fa-tv"></i> View All Seasons (${details.totalSeasonCount})
+                        </button>
+                    `;
+
+                    currentShowDetails = details;
+
+                    document.getElementById('showSeasonsBtn').addEventListener('click', () => {
+                        openSeasonsModal(details);
+                    });
+                }
+
+                document.querySelectorAll('.country-provider-header').forEach(header => {
+                    header.addEventListener('click', () => {
+                        const content = header.nextElementSibling;
+                        const icon = header.querySelector('i');
+
+                        content.classList.toggle('active');
+                        icon.classList.toggle('fa-chevron-down');
+                        icon.classList.toggle('fa-chevron-up');
+                    });
+                });
+
+            } catch (error) {
+                console.error('Error loading media detail:', error);
+                mediaDetailContainer.innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: var(--secondary);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                        <h2>Error Loading Details</h2>
+                        <p>Failed to load details for this title. Please try again later.</p>
+                    </div>
+                `;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function loadEpisodes(seasonId) {
+            try {
+                const query = {
+                    operationName: "GetSeasonEpisodes",
+                    query: `
+                        query GetSeasonEpisodes($nodeId: ID!, $country: Country!, $language: Language!, $limit: Int, $offset: Int) {
+                            node(id: $nodeId) {
+                                id
+                                __typename
+                                ... on Season {
+                                    episodes(limit: $limit, offset: $offset) {
+                                        id
+                                        content(country: $country, language: $language) {
+                                            title
+                                            episodeNumber
+                                            seasonNumber
+                                            shortDescription
+                                            __typename
+                                        }
+                                        __typename
+                                    }
+                                }
+                            }
+                        }
+                    `,
+                    variables: {
+                        nodeId: seasonId,
+                        country: currentCountry,
+                        language: currentLanguage,
+                        limit: 50,
+                        offset: 0
+                    }
+                };
+
+                const data = await fetchJustWatchData(query, query.variables);
+                return data?.data?.node?.episodes || [];
+            } catch (error) {
+                console.error('Error loading episodes:', error);
+                return null;
+            }
+        }
+
+        function openSeasonsModal(showDetails) {
+            const modal = document.getElementById('seasonsModal');
+            const seasonsGrid = document.getElementById('seasonsGrid');
+            const episodesContainer = document.getElementById('episodesContainer');
+            const episodeList = document.getElementById('episodeList');
+
+            document.getElementById('seasonsModalTitle').textContent = showDetails.content.title;
+            document.getElementById('seasonsModalSubtitle').textContent =
+                `${showDetails.totalSeasonCount} Seasons • ${showDetails.seasons.reduce((acc, season) => acc + season.totalEpisodeCount, 0)} Episodes`;
+
+            seasonsGrid.innerHTML = showDetails.seasons.map(season => {
+                const posterUrl = season.content.posterUrl ?
+                    `${IMAGE_BASE_URL}${season.content.posterUrl.replace('{profile}', 's718').replace('{format}', 'jpg')}` :
+                    'https://placehold.co/500x750/2a2a40/ffffff?text=No+Poster';
+
+                return `
+                    <div class="season-card" data-season-id="${season.id}" data-season-number="${season.content.seasonNumber}">
+                        <img src="${posterUrl}" alt="${season.content.title}" class="season-poster"
+                             onerror="this.src='https://placehold.co/500x750/2a2a40/ffffff?text=No+Poster'">
+                        <div class="season-info">
+                            <div class="season-title">${season.content.title}</div>
+                            <div class="season-meta">
+                                <span>${season.totalEpisodeCount} Episodes</span>
+                                <span>${season.content.originalReleaseYear || ''}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.season-card').forEach(card => {
+                card.addEventListener('click', async function() {
+                    const seasonId = this.dataset.seasonId;
+                    const seasonNumber = this.dataset.seasonNumber;
+
+                    document.querySelectorAll('.season-card').forEach(c => {
+                        c.classList.remove('active-season');
+                    });
+
+                    this.classList.add('active-season');
+
+                    episodesContainer.style.display = 'none';
+                    episodeList.innerHTML = '<div class="loading-spinner" style="margin: 20px auto;"></div>';
+
+                    const episodes = await loadEpisodes(seasonId);
+
+                    if (episodes && episodes.length > 0) {
+                        episodeList.innerHTML = episodes.map(episode => {
+                            return `
+                                <div class="episode-card">
+                                    <div class="episode-number">${episode.content.episodeNumber}</div>
+                                    <div class="episode-content">
+                                        <div class="episode-title">${episode.content.title}</div>
+                                        <div class="episode-description">${episode.content.shortDescription || 'No description available.'}</div>
+                                        <div class="episode-providers" id="providers-${episode.id}"></div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+
+                        episodes.forEach(episode => {
+                            loadEpisodeProviders(episode.id, seasonNumber, episode.content.episodeNumber);
+                        });
+                    } else {
+                        episodeList.innerHTML = '<p style="color: var(--gray); text-align: center;">No episodes found</p>';
+                    }
+
+                    episodesContainer.style.display = 'block';
+                });
+            });
+
+            modal.style.display = 'block';
+
+            document.querySelector('.close-seasons-modal').onclick = function() {
+                modal.style.display = 'none';
+            };
+
+            window.onclick = function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            };
+        }
+
+        async function loadEpisodeProviders(episodeId, seasonNumber, episodeNumber) {
+            try {
+                const query = {
+                    operationName: "GetEpisodeOffers",
+                    query: `
+                        query GetEpisodeOffers(
+                            $nodeId: ID!,
+                            $country: Country!,
+                            $language: Language!,
+                            $filter: OfferFilter!
+                        ) {
+                            node(id: $nodeId) {
+                                ... on Episode {
+                                    offers(country: $country, platform: WEB, filter: $filter) {
+                                        package {
+                                            id
+                                            clearName
+                                            technicalName
+                                            icon(profile: S100)
+                                            __typename
+                                        }
+                                        monetizationType
+                                        presentationType
+                                        standardWebURL
+                                        __typename
+                                    }
+                                }
+                            }
+                        }
+                    `,
+                    variables: {
+                        nodeId: episodeId,
+                        country: currentCountry,
+                        language: currentLanguage,
+                        filter: {
+                            bestOnly: true,
+                            preAffiliate: true
+                        }
+                    }
+                };
+
+                const data = await fetchJustWatchData(query, query.variables);
+                const providersContainer = document.getElementById(`providers-${episodeId}`);
+
+                if (data?.data?.node?.offers?.length > 0) {
+                    const uniqueProviders = {};
+                    data.data.node.offers.forEach(offer => {
+                        if (!uniqueProviders[offer.package.id]) {
+                            uniqueProviders[offer.package.id] = offer;
+                        }
+                    });
+
+                    providersContainer.innerHTML = `
+                        <span style="font-size: 0.8rem; color: var(--gray);">Available on:</span>
+                        ${Object.values(uniqueProviders).map(offer => `
+                            <a href="${offer.standardWebURL}" target="_blank" class="provider-badge"
+                               title="${offer.package.clearName} (${offer.monetizationType === 'FLATRATE' ? 'Subscription' : 'Rent/Buy'})">
+                                <img src="${IMAGE_BASE_URL}${offer.package.icon.replace('{format}', 'png')}"
+                                     alt="${offer.package.clearName}"
+                                     onerror="this.src='https://placehold.co/20x20/2a2a40/ffffff?text=Logo'">
+                                ${offer.package.clearName}
+                            </a>
+                        `).join('')}
+                    `;
+                } else {
+                    providersContainer.innerHTML = `
+                        <span style="font-size: 0.8rem; color: var(--gray);">Not currently available in your region</span>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading episode providers:', error);
+            }
+        }
+
+        function getCountryName(code) {
+            const countries = {
+                'US': 'United States',
+                'GB': 'United Kingdom',
+                'DE': 'Germany',
+                'FR': 'France',
+                'IT': 'Italy',
+                'ES': 'Spain',
+                'CA': 'Canada',
+                'AU': 'Australia',
+                'JP': 'Japan',
+                'KR': 'South Korea',
+                'TR': 'Turkey',
+                'AT': 'Austria',
+                'BE': 'Belgium',
+                'BG': 'Bulgaria',
+                'CH': 'Switzerland',
+                'CZ': 'Czech Republic',
+                'DK': 'Denmark',
+                'FI': 'Finland',
+                'GR': 'Greece',
+                'HR': 'Croatia',
+                'HU': 'Hungary',
+                'IE': 'Ireland',
+                'NL': 'Netherlands',
+                'NO': 'Norway',
+                'PL': 'Poland',
+                'PT': 'Portugal',
+                'RO': 'Romania',
+                'SE': 'Sweden',
+                'SK': 'Slovakia',
+                'AE': 'United Arab Emirates',
+                'AR': 'Argentina',
+                'BO': 'Bolivia',
+                'BR': 'Brazil',
+                'CL': 'Chile',
+                'CO': 'Colombia',
+                'CR': 'Costa Rica',
+                'EC': 'Ecuador',
+                'EG': 'Egypt',
+                'GT': 'Guatemala',
+                'HK': 'Hong Kong',
+                'ID': 'Indonesia',
+                'IL': 'Israel',
+                'IN': 'India',
+                'MX': 'Mexico',
+                'MY': 'Malaysia',
+                'NZ': 'New Zealand',
+                'PE': 'Peru',
+                'PH': 'Philippines',
+                'PK': 'Pakistan',
+                'RU': 'Russia',
+                'SA': 'Saudi Arabia',
+                'SG': 'Singapore',
+                'TH': 'Thailand',
+                'TW': 'Taiwan',
+                'VE': 'Venezuela',
+                'ZA': 'South Africa'
+            };
+            return countries[code] || code;
+        }
+
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        async function handleSearch() {
+            const query = searchInput.value.trim();
+
+            if (query.length < 2) {
+                searchResultsContainer.style.display = 'none';
+                return;
+            }
+
+            try {
+                const searchQuery = {
+                    operationName: "GetSearchTitles",
+                    query: `
+                        query GetSearchTitles(
+                            $searchTitlesFilter: TitleFilter!,
+                            $country: Country!,
+                            $language: Language!,
+                            $first: Int!,
+                            $formatPoster: ImageFormat,
+                            $profile: PosterProfile,
+                            $backdropProfile: BackdropProfile,
+                        ) {
+                            popularTitles(
+                                country: $country
+                                filter: $searchTitlesFilter
+                                first: $first
+                                sortBy: POPULAR
+                                sortRandomSeed: 0
+                            ) {
+                                edges {
+                                    ...SearchTitleGraphql
+                                    __typename
+                                }
+                                __typename
+                            }
+                        }
+
+                        fragment SearchTitleGraphql on PopularTitlesEdge {
+                            node {
+                                id
+                                objectId
+                                objectType
+                                content(country: $country, language: $language) {
+                                    title
+                                    fullPath
+                                    originalReleaseYear
+                                    originalReleaseDate
+                                    productionCountries
+                                    runtime
+                                    shortDescription
+                                    genres {
+                                        shortName
+                                        __typename
+                                    }
+                                    externalIds {
+                                        imdbId
+                                        tmdbId
+                                        __typename
+                                    }
+                                    posterUrl(profile: $profile, format: $formatPoster)
+                                    backdrops(profile: $backdropProfile, format: $formatPoster) {
+                                        backdropUrl
+                                        __typename
+                                    }
+                                    __typename
+                                }
+                                __typename
+                            }
+                            __typename
+                        }
+                    `,
+                    variables: {
+                        searchTitlesFilter: {
+                            searchQuery: query,
+                            includeTitlesWithoutUrl: true
+                        },
+                        country: currentCountry,
+                        language: currentLanguage,
+                        first: 10,
+                        formatPoster: "JPG",
+                        profile: "S718",
+                        backdropProfile: "S1920"
+                    }
+                };
+
+                const data = await fetchJustWatchData(searchQuery, searchQuery.variables);
+
+                if (data?.data?.popularTitles?.edges?.length > 0) {
+                    searchResultsContainer.innerHTML = data.data.popularTitles.edges
+                        .map(edge => {
+                            const node = edge.node;
+                            const content = node.content;
+                            const posterUrl = content.posterUrl ?
+                                `${IMAGE_BASE_URL}${content.posterUrl}` :
+                                'https://placehold.co/100x150/2a2a40/ffffff?text=No+Poster';
+
+                            return `
+                                <div class="search-result-item" data-id="${node.id}" data-type="${node.objectType.toLowerCase()}">
+                                    <img src="${posterUrl}" alt="${content.title}" class="search-result-poster"
+                                         onerror="this.src='https://placehold.co/100x150/2a2a40/ffffff?text=No+Poster'">
+                                    <div class="search-result-info">
+                                        <div class="search-result-title">${content.title}</div>
+                                        <div class="search-result-meta">
+                                            ${content.originalReleaseYear || 'N/A'} •
+                                            ${node.objectType === 'MOVIE' ? 'Movie' : 'TV Show'}
+                                        </div>
+                                        <div class="search-result-description">${content.shortDescription || ''}</div>
+                                    </div>
+                                </div>
+                            `;
+                        })
+                        .join('');
+
+                    searchResultsContainer.style.display = 'block';
+
+                    document.querySelectorAll('.search-result-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            const id = item.dataset.id;
+                            const type = item.dataset.type === 'movie' ? 'MOVIE' : 'SHOW';
+                            searchResultsContainer.style.display = 'none';
+                            searchInput.value = '';
+                            openMediaDetail(id, type);
+                        });
+                    });
+                } else {
+                    searchResultsContainer.innerHTML = '<div class="search-result-item">No results found</div>';
+                    searchResultsContainer.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                searchResultsContainer.innerHTML = '<div class="search-result-item">Error loading results</div>';
+                searchResultsContainer.style.display = 'block';
+            }
+        }
+
+        document.addEventListener('click', (event) => {
+            if (!searchInput.contains(event.target) && !searchResultsContainer.contains(event.target)) {
+                searchResultsContainer.style.display = 'none';
+            }
+        });
+
+        const techDetailsModal = document.getElementById('techDetailsModal');
+        const techDetailsContent = document.getElementById('techDetailsContent');
+        const closeTechModal = document.querySelector('.close-tech-modal');
+
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('provider-tech-btn')) {
+                const offer = JSON.parse(e.target.dataset.offer);
+                showTechDetails(offer);
+            }
+        });
+
+        closeTechModal.addEventListener('click', () => {
+            techDetailsModal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === techDetailsModal) {
+                techDetailsModal.style.display = 'none';
+            }
+        });
+
+        function showTechDetails(offer) {
+            techDetailsContent.innerHTML = `
+                <div class="provider-info">
+                    <img src="${IMAGE_BASE_URL}${offer.package.icon.replace('{format}', 'png')}"
+                         alt="${offer.package.clearName}" class="provider-logo"
+                         onerror="this.src='https://placehold.co/100x100/2a2a40/ffffff?text=Logo'">
+                    <h4>${offer.package.clearName}</h4>
+                    <p>${offer.monetizationType === 'FLATRATE' ? 'Subscription' : 'Rent/Buy'} - ${offer.presentationType}</p>
+                </div>
+                <div class="tech-details-grid">
+                    <div class="tech-detail-item">
+                        <div class="tech-detail-label">Video Quality</div>
+                        <div class="tech-detail-value">${offer.presentationType || 'N/A'}</div>
+                    </div>
+                    <div class="tech-detail-item">
+                        <div class="tech-detail-label">Video Technology</div>
+                        <div class="tech-detail-value">${offer.videoTechnology?.join(', ') || 'N/A'}</div>
+                    </div>
+                    <div class="tech-detail-item">
+                        <div class="tech-detail-label">Audio Languages</div>
+                        <div class="tech-detail-value">${offer.audioLanguages?.join(', ') || 'N/A'}</div>
+                    </div>
+                    <div class="tech-detail-item">
+                        <div class="tech-detail-label">Audio Technology</div>
+                        <div class="tech-detail-value">${offer.audioTechnology?.join(', ') || 'N/A'}</div>
+                    </div>
+                    <div class="tech-detail-item">
+                        <div class="tech-detail-label">Subtitles</div>
+                        <div class="tech-detail-value">${offer.subtitleLanguages?.join(', ') || 'N/A'}</div>
+                    </div>
+                    <div class="tech-detail-item">
+                        <div class="tech-detail-label">Price</div>
+                        <div class="tech-detail-value">${offer.retailPrice || 'N/A'}</div>
+                    </div>
+                </div>
+            `;
+            techDetailsModal.style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
