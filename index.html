@@ -1,65 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Streaming Content Browser</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
         :root {
-            --primary: #6a5acd;
-            --primary-dark: #483d8b;
-            --secondary: #ff6b6b;
-            --dark: #0f0f1a;
-            --dark-light: #1a1a2e;
-            --light: #ffffff;
-            --gray: #cccccc;
-            --gray-dark: #2a2a40;
-            --rating: #f5c518;
+            --primary: #8b5cf6;
+            --primary-gradient: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            --secondary: #ec4899;
+            --secondary-gradient: linear-gradient(135deg, #ec4899 0%, #d946ef 100%);
+            --bg-dark: #0f172a;
+            --bg-lighter: #1e293b;
+            --text-main: #f8fafc;
+            --text-secondary: #94a3b8;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --rating-imdb: #f5c518;
+            --rating-tmdb: #01b4e4;
+            --rating-rt: #fa320a;
+            --success: #10b981;
         }
 
         * {
-            box-sizing: border;
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--bg-dark);
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--dark);
-            color: var(--light);
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             line-height: 1.6;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.15) 0%, transparent 20%);
+            background-attachment: fixed;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+            border-radius: 4px;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
-            min-height: 100vh; /* Added for scroll fix */
         }
 
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--gray-dark);
+            padding: 20px 0;
+            margin-bottom: 40px;
             flex-wrap: wrap;
             gap: 20px;
+            border-bottom: 1px solid var(--glass-border);
         }
 
         .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--primary);
+            gap: 15px;
+            letter-spacing: -1px;
         }
 
         .logo i {
-            font-size: 1.8rem;
+            background: var(--primary-gradient);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .search-container {
@@ -70,191 +106,216 @@
 
         .search-bar {
             width: 100%;
-            padding: 12px 20px;
-            border-radius: 30px;
-            border: none;
-            background-color: var(--dark-light);
-            color: var(--light);
+            padding: 16px 24px;
+            border-radius: 50px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            color: var(--text-main);
             font-size: 1rem;
-            padding-left: 45px;
-            transition: all 0.3s;
+            padding-left: 55px;
+            transition: all 0.3s ease;
+            font-family: 'Outfit', sans-serif;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         .search-bar:focus {
             outline: none;
-            box-shadow: 0 0 0 2px var(--primary);
-            background-color: var(--dark);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+            transform: translateY(-2px);
         }
 
         .search-icon {
             position: absolute;
-            left: 15px;
+            left: 20px;
             top: 50%;
             transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 1.2rem;
             pointer-events: none;
-            color: var(--gray);
         }
 
         .search-results {
             position: absolute;
-            top: 100%;
+            top: 110%;
             left: 0;
             right: 0;
-            background-color: var(--dark-light);
-            border-radius: 0 0 10px 10px;
-            max-height: 400px;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            max-height: 500px;
             overflow-y: auto;
             z-index: 100;
             display: none;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            padding: 10px;
         }
 
         .search-result-item {
-            padding: 10px 15px;
+            padding: 12px 15px;
             display: flex;
             align-items: center;
             gap: 15px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
+            border-radius: 12px;
         }
 
         .search-result-item:hover {
-            background-color: var(--primary-dark);
+            background-color: rgba(139, 92, 246, 0.2);
         }
 
         .search-result-poster {
-            width: 40px;
-            height: 60px;
+            width: 45px;
+            height: 68px;
             object-fit: cover;
-            border-radius: 4px;
-        }
-
-        .search-result-info {
-            flex: 1;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .search-result-title {
-            font-weight: bold;
-            margin-bottom: 3px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 4px;
         }
 
         .search-result-meta {
-            font-size: 0.8rem;
-            color: var(--gray);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
         }
 
         .media-tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 15px;
+            margin-bottom: 30px;
             width: 100%;
         }
 
         .media-tab {
-            padding: 10px 20px;
-            border-radius: 20px;
-            border: none;
-            background-color: transparent;
-            color: var(--gray);
+            padding: 12px 30px;
+            border-radius: 50px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 500;
-            position: relative;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .media-tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            transform: translateY(-2px);
         }
 
         .media-tab.active {
-            color: var(--light);
-            background-color: var(--primary);
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
         }
 
         .media-tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 3px;
-            background-color: var(--primary);
-            border-radius: 3px;
+            display: none;
         }
 
         .filters-section {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 30px;
+            gap: 20px;
+            margin-bottom: 40px;
+            background: rgba(30, 41, 59, 0.4);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
             align-items: center;
         }
 
         .filter-group {
             position: relative;
+            flex: 1;
+            min-width: 200px;
         }
 
         .filter-label {
             position: absolute;
-            top: -10px;
+            top: -12px;
             left: 15px;
-            background-color: var(--dark);
-            padding: 0 5px;
-            font-size: 0.8rem;
-            color: var(--gray);
+            background-color: #161e2e;
+            padding: 0 8px;
+            font-size: 0.75rem;
+            color: var(--primary);
+            font-weight: 600;
+            border-radius: 5px;
+            z-index: 2;
         }
 
         select.filter-select {
-            padding: 10px 15px;
-            padding-right: 35px;
-            border-radius: 20px;
-            border: 1px solid var(--gray-dark);
-            background-color: var(--dark-light);
-            color: var(--light);
+            width: 100%;
+            padding: 14px 20px;
+            padding-right: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background-color: rgba(15, 23, 42, 0.6);
+            color: var(--text-main);
             cursor: pointer;
-            appearance: none;
-            min-width: 180px;
             transition: all 0.3s;
+            font-family: 'Outfit', sans-serif;
+            appearance: none;
         }
 
         select.filter-select:focus {
             outline: none;
             border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
         }
 
         .filter-icon {
             position: absolute;
-            right: 12px;
+            right: 15px;
             top: 50%;
             transform: translateY(-50%);
             pointer-events: none;
-            color: var(--gray);
+            color: var(--text-secondary);
         }
 
         .media-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
         }
 
         .media-card {
             position: relative;
-            border-radius: 10px;
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s;
-            cursor: pointer;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             aspect-ratio: 2/3;
+            background: var(--bg-lighter);
+            cursor: pointer;
         }
 
         .media-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 0 20px 40px -10px rgba(139, 92, 246, 0.3);
+            z-index: 10;
         }
 
         .media-poster {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.5s;
+            transition: transform 0.6s ease;
         }
 
         .media-card:hover .media-poster {
@@ -266,102 +327,128 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
-            padding: 15px;
+            background: linear-gradient(to top, rgba(15, 23, 42, 1) 0%, rgba(15, 23, 42, 0.8) 60%, transparent 100%);
+            padding: 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            backdrop-filter: blur(5px);
             opacity: 0;
-            transition: opacity 0.3s;
         }
 
         .media-card:hover .media-overlay {
+            transform: translateY(0);
             opacity: 1;
         }
 
         .media-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+            line-height: 1.3;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .media-info {
             display: flex;
             justify-content: space-between;
-            font-size: 0.8rem;
-            color: var(--gray);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
         }
 
         .media-type-badge {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            font-weight: bold;
+            top: 15px;
+            right: 15px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .rating-tooltip.imdb-only {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(245, 197, 24, 0.9);
+            color: #000;
+            padding: 6px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            opacity: 0;
+            transition: all 0.3s;
+            transform: translateY(-10px);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .rating-tooltip.imdb-only .imdb-logo-small {
+            height: 14px;
+            width: auto;
+        }
+
+        .media-card:hover .rating-tooltip.imdb-only {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
+            border: 4px solid rgba(255, 255, 255, 0.1);
             border-radius: 50%;
             border-top: 4px solid var(--primary);
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             animation: spin 1s linear infinite;
-            margin: 50px auto;
+            margin: 60px auto;
             display: none;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
+        /* Modal Modernization */
         .modal {
+            background-color: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(15px);
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
             z-index: 1000;
             overflow-y: auto;
         }
 
         .modal-content {
-            background-color: var(--dark);
+            background: transparent;
             min-height: 100vh;
             width: 100%;
             position: relative;
         }
 
-        .close-modal {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            font-size: 2rem;
-            cursor: pointer;
-            color: var(--gray);
-            z-index: 1001;
-            background-color: rgba(0, 0, 0, 0.7);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-        }
-
-        .close-modal:hover {
-            color: var(--light);
-            transform: rotate(90deg);
-        }
-
         .media-header {
             position: relative;
-            height: 70vh;
-            min-height: 500px;
+            height: 80vh;
+            min-height: 600px;
             overflow: hidden;
         }
 
@@ -369,7 +456,10 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            filter: brightness(0.5);
+            mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+            filter: brightness(0.6) blur(0px);
+            transition: all 0.5s;
         }
 
         .media-header-content {
@@ -377,61 +467,55 @@
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 40px;
-            background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
-            display: flex;
-            gap: 30px;
+            background: transparent;
+            padding: 60px 5%;
             align-items: flex-end;
+            padding-bottom: 80px;
+            display: flex;
+            gap: 40px;
         }
 
         .media-poster-large {
-            width: 300px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            transform: translateY(50px);
-            border: 3px solid var(--dark-light);
+            width: 320px;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform: translateY(0);
         }
 
         .media-header-info {
             flex: 1;
-            transform: translateY(50px);
         }
 
         .media-title-large {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
+            font-size: 3.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 20px;
             color: white;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            line-height: 1.1;
         }
 
         .media-meta {
-            display: flex;
+            font-size: 1.1rem;
+            opacity: 0.9;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: inline-flex;
             gap: 15px;
             margin-bottom: 20px;
-            flex-wrap: wrap;
             align-items: center;
-        }
-
-        .media-rating-large {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            color: var(--rating);
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-
-        .media-year {
-            color: var(--gray);
-        }
-
-        .media-runtime {
-            color: var(--gray);
         }
 
         .media-overview {
-            margin-bottom: 20px;
-            line-height: 1.7;
-            max-width: 800px;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #cbd5e1;
+            max-width: 900px;
+            margin-bottom: 30px;
         }
 
         .media-genres {
@@ -442,307 +526,19 @@
         }
 
         .genre-tag {
-            padding: 5px 15px;
-            background-color: var(--primary);
-            border-radius: 20px;
-            font-size: 0.8rem;
-        }
-
-        .content-sections {
-            padding: 40px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--gray-dark);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .section-title i {
-            color: var(--primary);
-        }
-
-        .providers-container {
-            background-color: var(--dark-light);
-            border-radius: 10px;
-            padding: 20px;
-        }
-
-        .provider-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            gap: 15px;
-        }
-
-        .provider-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px; /* Adjusted gap */
-        }
-
-        .provider-main {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            cursor: pointer;
-            width: 100%; /* Ensure it takes full width of item for click area */
-        }
-
-        .provider-logo {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-            background-color: var(--dark);
-            padding: 5px;
-        }
-
-        .provider-name {
-            font-size: 0.7rem;
-            text-align: center;
-        }
-
-        .provider-type {
-            font-size: 0.8rem;
-            color: var(--gray);
-            margin-top: 5px;
-        }
-
-        .provider-tech-btn {
-            background: var(--primary-dark);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 5px 10px;
-            font-size: 0.7rem;
-            cursor: pointer;
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--text-main);
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
             transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 5px;
         }
 
-        .provider-tech-btn:hover {
-            background: var(--primary);
-        }
-
-        .tech-details-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .tech-details-content {
-            background: var(--dark-light);
-            padding: 20px;
-            border-radius: 10px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        .close-tech-modal {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--gray);
-        }
-
-        .tech-details-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .tech-detail-item {
-            background: var(--dark);
-            padding: 10px;
-            border-radius: 5px;
-        }
-
-        .tech-detail-label {
-            font-weight: bold;
-            color: var(--primary);
-            font-size: 0.8rem;
-        }
-
-        .tech-detail-value {
-            color: var(--light);
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-
-        .country-providers {
-            margin-top: 20px;
-            background-color: var(--dark-light);
-            border-radius: 10px;
-            padding: 15px;
-        }
-
-        .country-provider-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            cursor: pointer;
-        }
-
-        .country-provider-title {
-            font-weight: bold;
-        }
-
-        .country-provider-content {
-            display: none;
-            padding-top: 10px;
-        }
-
-        .country-provider-content.active {
-            display: block;
-        }
-
-        .load-more {
-            display: block;
-            width: 100%;
-            padding: 10px;
+        .genre-tag:hover {
             background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 20px;
-            text-align: center;
-            transition: background-color 0.3s;
-        }
-
-        .load-more:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin: 30px 0;
-            padding: 20px;
-            align-items: center;
-        }
-        .pagination button {
-            padding: 8px 16px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .pagination button:hover:not(:disabled) {
-            background-color: var(--primary-dark);
-        }
-        .pagination button:disabled {
-            background-color: var(--gray-dark);
-            cursor: not-allowed;
-        }
-        .pagination span {
-            font-weight: bold;
-            color: var(--light);
-        }
-
-        .technical-details-section {
-            background-color: var(--dark-light);
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-        .technical-details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
-        }
-        .detail-item {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        .detail-label {
-            font-weight: bold;
-            color: var(--primary);
-            font-size: 0.9rem;
-        }
-        .detail-value {
-            color: var(--gray);
-        }
-
-        .search-result-description {
-            font-size: 0.8rem;
-            color: var(--gray);
-            margin-top: 5px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .rating-tooltip.imdb-only {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 4px 8px;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            color: var(--light);
-        }
-
-        .media-card:hover .rating-tooltip.imdb-only {
-            opacity: 1;
-        }
-
-        .rating-tooltip.imdb-only .rating-row {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            margin-bottom: 0;
-        }
-
-        .rating-tooltip.imdb-only .imdb-logo-small {
-            height: 16px;
-            width: auto;
-        }
-
-        .rating-tooltip.imdb-only .rating-value {
-            color: var(--light);
-            font-weight: bold;
-            font-size: 0.9rem;
+            box-shadow: 0 0 15px var(--primary);
         }
 
         .media-ratings {
@@ -755,46 +551,584 @@
         .rating-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            background: var(--dark-light);
-            padding: 8px 12px;
-            border-radius: 20px;
+            gap: 10px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--glass-border);
+            padding: 10px 20px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
 
         .rating-item img {
-            height: 20px;
+            height: 24px;
             width: auto;
         }
 
         .rating-item span {
             font-weight: bold;
-            color: var(--light);
+            color: white;
         }
 
         .rating-item small {
-            font-size: 0.7rem;
-            color: var(--gray);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .close-modal,
+        .close-tech-modal,
+        .close-seasons-modal {
+            position: fixed;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            top: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 1001;
+        }
+
+        .close-modal:hover,
+        .close-tech-modal:hover,
+        .close-seasons-modal:hover {
+            background: white;
+            color: black;
+            transform: rotate(90deg) scale(1.1);
+        }
+
+        /* Content Sections */
+        .content-sections {
+            padding: 0 5%;
+            margin-top: -50px;
+            position: relative;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Provider Styles */
+        .providers-container {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--secondary);
+            background: -webkit-linear-gradient(45deg, var(--secondary), var(--primary));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .provider-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 20px;
+        }
+
+        .provider-item {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 15px;
+            border-radius: 16px;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .provider-item:hover {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+
+        .provider-main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+
+        .provider-logo {
+            width: 60px;
+            height: 60px;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .provider-name {
+            font-weight: 600;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .provider-type {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .provider-tech-btn {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .provider-tech-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .tech-details-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .tech-details-content {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 700px;
+            width: 90%;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .tech-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .tech-detail-item {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .tech-detail-label {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .tech-detail-value {
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        .country-providers {
+            margin-top: 25px;
+            background-color: rgba(15, 23, 42, 0.4);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .country-provider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .country-provider-title {
+            font-weight: bold;
+        }
+
+        .country-provider-content {
+            display: none;
+            padding-top: 15px;
+            border-top: 1px solid var(--glass-border);
+            margin-top: 10px;
+        }
+
+        .country-provider-content.active {
+            display: block;
+        }
+
+        .load-more {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 30px;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 10px 20px -5px rgba(139, 92, 246, 0.5);
+        }
+
+        .load-more:hover {
+            background-color: var(--primary-gradient);
+            transform: translateY(-3px);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 40px 0;
+            align-items: center;
+        }
+
+        .pagination button {
+            border-radius: 50px;
+            padding: 10px 25px;
+            font-weight: 600;
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+        }
+
+        .pagination button:disabled {
+            background: var(--glass-bg);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        .seasons-modal {
+            background-color: rgba(15, 23, 42, 0.95);
+            padding: 40px 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2000;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .seasons-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: transparent;
+            padding: 60px 40px;
+            border-radius: 0;
+            position: relative;
+        }
+
+        .seasons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .season-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.4s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .season-card:hover,
+        .season-card.active-season {
+            border-color: var(--secondary);
+            box-shadow: 0 0 30px rgba(236, 72, 153, 0.2);
+            transform: translateY(-10px);
+        }
+
+        .season-poster {
+            width: 100%;
+            aspect-ratio: 2/3;
+            object-fit: cover;
+        }
+
+        .season-info {
+            padding: 20px;
+        }
+
+        .season-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.2rem;
+        }
+
+        .season-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .episodes-container {
+            margin-top: 50px;
+            display: none;
+        }
+
+        .episode-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .episode-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            display: flex;
+            gap: 25px;
+            transition: all 0.3s;
+        }
+
+        .episode-card:hover {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: var(--primary);
+        }
+
+        .episode-number {
+            color: var(--secondary);
+            font-size: 2rem;
+            font-weight: 700;
+            min-width: 60px;
+        }
+
+        .episode-content {
+            flex: 1;
+        }
+
+        .episode-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.2rem;
+        }
+
+        .episode-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-top: 10px;
+            background: transparent;
+            padding: 0;
+        }
+
+        .episode-providers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .provider-badge {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .provider-badge:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .provider-badge img {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        /* Offers in Season Modal */
+        .season-offers-container {
+            margin: 30px 0;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid var(--glass-border);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .season-offers-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .season-offers-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .season-offer-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .season-offer-item:hover {
+            background: var(--primary-gradient);
+            border-color: transparent;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px -5px rgba(139, 92, 246, 0.5);
+        }
+
+        .season-offer-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .season-offer-price {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .external-link {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 600;
+        }
+
+        .external-link:hover {
+            color: var(--secondary);
+            text-decoration: underline;
+        }
+
+        .technical-details-section {
+            background-color: rgba(30, 41, 59, 0.6);
+            border-radius: 20px;
+            padding: 25px;
+            margin-top: 0;
+            border: 1px solid var(--glass-border);
+        }
+
+        .technical-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 0.85rem;
+        }
+
+        .detail-value {
+            color: var(--text-secondary);
+            word-break: break-all;
         }
 
         @media (max-width: 1200px) {
             .media-header-content {
                 flex-direction: column;
                 align-items: flex-start;
+                padding: 40px 20px;
             }
 
             .media-poster-large {
-                width: 200px;
-                transform: translateY(0);
+                width: 220px;
+                margin-bottom: 20px;
             }
 
-            .media-header-info {
-                transform: translateY(0);
+            .content-sections {
+                grid-template-columns: 1fr;
+                margin-top: 0;
+                padding: 20px;
             }
         }
 
-        @media (max-width: 992px) {
-            .content-sections {
-                grid-template-columns: 1fr;
+        @media (max-width: 768px) {
+            .media-title-large {
+                font-size: 2.2rem;
             }
 
             .media-header {
@@ -802,240 +1136,31 @@
                 min-height: auto;
             }
 
-            .media-header-content {
-                position: relative;
-                background: linear-gradient(transparent, var(--dark));
-                padding: 20px;
+            .seasons-container {
+                padding: 40px 20px;
             }
 
-            .media-poster-large {
-                display: none;
-            }
-        }
-
-        @media (max-width: 768px) {
-            header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .search-container {
-                max-width: 100%;
-            }
-
-            .media-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            }
-
-            .media-title-large {
-                font-size: 1.8rem;
-            }
-            .content-sections {
-                padding: 20px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .media-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-                gap: 15px;
-            }
-
-            .filters-section {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .filter-group {
+            .search-results {
                 width: 100%;
-            }
-
-            select.filter-select {
-                width: 100%;
-            }
-            .media-header-content {
-                padding: 15px;
+                left: 0;
+                right: 0;
             }
         }
 
-        .season-item {
-            background-color: var(--dark-light);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            transition: all 0.3s;
-        }
-        .season-item:hover {
-            background-color: var(--primary-dark);
-        }
-        .season-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            padding: 10px;
-        }
-        .episode-item {
-            background-color: var(--dark);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-left: 3px solid var(--primary);
-        }
-        .episode-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-        .episode-description {
-            padding: 10px;
-            background-color: rgba(0,0,0,0.2);
-            border-radius: 5px;
-            margin-top: 8px;
-        }
-        .seasons-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.9);
-            z-index: 2000;
-            overflow-y: auto;
-            padding: 40px 0;
-        }
-        .seasons-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: var(--dark);
-            border-radius: 10px;
-            padding: 30px;
-            position: relative;
-        }
-        .close-seasons-modal {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 2rem;
-            cursor: pointer;
-            color: var(--gray);
-            transition: all 0.3s;
-        }
-        .close-seasons-modal:hover {
-            color: var(--light);
-            transform: rotate(90deg);
-        }
-        .seasons-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-        .season-card {
-            background: var(--dark-light);
-            border-radius: 10px;
-            overflow: hidden;
-            transition: all 0.3s;
-            cursor: pointer;
-            position: relative;
-        }
-        .season-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        }
-        .season-poster {
-            width: 100%;
-            height: 350px;
-            object-fit: cover;
-        }
-        .season-info {
-            padding: 15px;
-        }
-        .season-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 1.1rem;
-        }
-        .season-meta {
-            display: flex;
-            justify-content: space-between;
-            color: var(--gray);
-            font-size: 0.9rem;
-        }
-        .episodes-container {
-            margin-top: 40px;
-            display: none;
-        }
-        .episode-list {
-            display: grid;
-            gap: 15px;
-        }
-        .episode-card {
-            background: var(--dark-light);
-            border-radius: 8px;
-            padding: 15px;
-            display: flex;
-            gap: 15px;
-            transition: all 0.3s;
-        }
-        .episode-card:hover {
-            background: var(--primary-dark);
-        }
-        .episode-number {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--primary);
-            min-width: 50px;
-        }
-        .episode-content {
-            flex: 1;
-        }
-        .episode-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 1.1rem;
-        }
-        .episode-description {
-            color: var(--gray);
-            font-size: 0.9rem;
-            margin-top: 10px;
-        }
-        .episode-providers {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .provider-badge {
-            background: var(--dark);
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .provider-badge img {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-        }
-        .active-season {
-            border: 2px solid var(--primary);
-        }
-        @media (max-width: 768px) {
-            .seasons-grid {
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
             }
 
-            .season-poster {
-                height: 250px;
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -1268,7 +1393,12 @@
     </div>
 
     <script>
-        const API_URL = 'https://cors-proxy.cooks.fyi/https://apis.justwatch.com/graphql';
+        const PROXIES = [
+            'https://cors-proxy.cooks.fyi',
+            'https://mpg-cors-proxy.herokuapp.com',
+            'https://cors-everywhere-wc8b4.ondigitalocean.app'
+        ];
+        let currentProxyIndex = 0;
         const IMAGE_BASE_URL = 'https://images.justwatch.com';
 
         const mediaTypeButtons = document.querySelectorAll('.media-tab[data-type]');
@@ -1344,7 +1474,7 @@
 
         function debounce(func, wait) {
             let timeout;
-            return function() {
+            return function () {
                 const context = this, args = arguments;
                 clearTimeout(timeout);
                 timeout = setTimeout(() => {
@@ -1387,25 +1517,48 @@
         }
 
         async function fetchJustWatchData(query, variables) {
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Origin': 'justwatch'
-                    },
-                    body: JSON.stringify({
-                        operationName: query.operationName,
-                        query: query.query,
-                        variables: variables
-                    })
-                });
-                return await response.json();
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                return null;
+            const maxRetries = PROXIES.length;
+            let attempts = 0;
+
+            while (attempts < maxRetries) {
+                const proxyUrl = PROXIES[currentProxyIndex];
+                const apiUrl = `${proxyUrl}/https://apis.justwatch.com/graphql`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Origin': 'justwatch'
+                        },
+                        body: JSON.stringify({
+                            operationName: query.operationName,
+                            query: query.query,
+                            variables: variables
+                        })
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 429 || response.status >= 500) {
+                            throw new Error(`Proxy error: ${response.status}`);
+                        }
+                    }
+
+                    return await response.json();
+                } catch (error) {
+                    console.warn(`Proxy ${proxyUrl} failed:`, error);
+                    attempts++;
+                    currentProxyIndex = (currentProxyIndex + 1) % PROXIES.length;
+
+                    if (attempts === maxRetries) {
+                        console.error('All proxies failed.');
+                        return null;
+                    }
+                }
             }
+            return null;
         }
+
 
         async function fetchPopularTitles(callType) {
             if (isLoading) return;
@@ -1527,7 +1680,7 @@
                     }
 
                     if (!newEndCursor && hasNextPage) {
-                       // API indicated next page but no cursor was provided. Keep hasNextPage true.
+                        // API indicated next page but no cursor was provided. Keep hasNextPage true.
                     } else if (!newEndCursor && !hasNextPage) {
                         hasNextPage = false;
                     }
@@ -2119,8 +2272,9 @@
                                                  onerror="this.src='https://placehold.co/100x100/2a2a40/ffffff?text=Logo'">
                                             <span class="provider-name">${offer.package.clearName}</span>
                                             <span class="provider-type">${offer.monetizationType === 'FLATRATE' ? 'Subscription' : offer.monetizationType === 'BUY' ? 'Buy' : 'Rent'}</span>
+                                            ${offer.elementCount && offer.elementCount > 0 ? `<span style="font-size: 0.7rem; color: var(--primary); display: block;">${offer.elementCount} ${type === 'SHOW' ? 'Seasons' : ''}</span>` : ''}
                                         </div>
-                                        <button class="provider-tech-btn" data-offer='${JSON.stringify(offer).replace(/'/g, "\\'")}'>
+                                        <button class="provider-tech-btn" data-type="${type}" data-offer='${JSON.stringify(offer).replace(/'/g, "\\'")}'>
                                             <i class="fas fa-info-circle"></i> Tech Details
                                         </button>
                                     </div>
@@ -2168,11 +2322,19 @@
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">IMDB ID:</span>
-                                <span class="detail-value">${content.externalIds?.imdbId || 'N/A'}</span>
+                                <span class="detail-value">
+                                    ${content.externalIds?.imdbId ?
+                        `<a href="https://www.imdb.com/title/${content.externalIds.imdbId}" target="_blank" class="external-link">${content.externalIds.imdbId}</a>` :
+                        'N/A'}
+                                </span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">TMDB ID:</span>
-                                <span class="detail-value">${content.externalIds?.tmdbId || 'N/A'}</span>
+                                <span class="detail-value">
+                                    ${content.externalIds?.tmdbId ?
+                        `<a href="https://www.themoviedb.org/${type === 'MOVIE' ? 'movie' : 'tv'}/${content.externalIds.tmdbId}" target="_blank" class="external-link">${content.externalIds.tmdbId}</a>` :
+                        'N/A'}
+                                </span>
                             </div>
                         </div>
                     </div>`;
@@ -2226,9 +2388,9 @@
                                     <i class="fas fa-globe"></i> Other Countries
                                 </div>
                                 ${otherCountries.map(countryCode => {
-                                    const offersForThisCountry = countryOffers[countryCode];
-                                    if (offersForThisCountry && offersForThisCountry.length > 0) {
-                                        return `
+                    const offersForThisCountry = countryOffers[countryCode];
+                    if (offersForThisCountry && offersForThisCountry.length > 0) {
+                        return `
                                             <div class="country-providers">
                                                 <div class="country-provider-header">
                                                     <span class="country-provider-title">${getCountryName(countryCode)}</span>
@@ -2244,8 +2406,9 @@
                                                                          onerror="this.src='https://placehold.co/100x100/2a2a40/ffffff?text=Logo'">
                                                                     <span class="provider-name">${offer.package.clearName}</span>
                                                                     <span class="provider-type">${offer.monetizationType === 'FLATRATE' ? 'Subscription' : offer.monetizationType === 'BUY' ? 'Buy' : 'Rent'}</span>
+                                                                    ${offer.elementCount && offer.elementCount > 0 ? `<span style="font-size: 0.7rem; color: var(--primary); display: block;">${offer.elementCount} ${type === 'SHOW' ? 'Seasons' : ''}</span>` : ''}
                                                                 </div>
-                                                                <button class="provider-tech-btn" data-offer='${JSON.stringify(offer).replace(/'/g, "\\'")}'>
+                                                                <button class="provider-tech-btn" data-type="${type}" data-offer='${JSON.stringify(offer).replace(/'/g, "\\'")}'>
                                                                     <i class="fas fa-info-circle"></i> Tech Details
                                                                 </button>
                                                             </div>
@@ -2254,9 +2417,9 @@
                                                 </div>
                                             </div>
                                         `;
-                                    }
-                                    return '';
-                                }).join('')}
+                    }
+                    return '';
+                }).join('')}
                             ` : ''}
                         </div>
                         <div>
@@ -2310,7 +2473,7 @@
                 const query = {
                     operationName: "GetSeasonEpisodes",
                     query: `
-                        query GetSeasonEpisodes($nodeId: ID!, $country: Country!, $language: Language!, $limit: Int, $offset: Int) {
+                        query GetSeasonEpisodes($nodeId: ID!, $country: Country!, $language: Language!, $limit: Int, $offset: Int, $filter: OfferFilter!) {
                             node(id: $nodeId) {
                                 id
                                 __typename
@@ -2324,6 +2487,19 @@
                                             shortDescription
                                             __typename
                                         }
+                                        offers(country: $country, platform: WEB, filter: $filter) {
+                                            package {
+                                                id
+                                                clearName
+                                                technicalName
+                                                icon(profile: S100)
+                                                __typename
+                                            }
+                                            monetizationType
+                                            presentationType
+                                            standardWebURL
+                                            __typename
+                                        }
                                         __typename
                                     }
                                 }
@@ -2335,7 +2511,11 @@
                         country: currentCountry,
                         language: currentLanguage,
                         limit: 50,
-                        offset: 0
+                        offset: 0,
+                        filter: {
+                            bestOnly: true,
+                            preAffiliate: true
+                        }
                     }
                 };
 
@@ -2357,6 +2537,14 @@
             document.getElementById('seasonsModalSubtitle').textContent =
                 `${showDetails.totalSeasonCount} Seasons • ${showDetails.seasons.reduce((acc, season) => acc + season.totalEpisodeCount, 0)} Episodes`;
 
+            // Add container for Season Offers
+            const offersContainer = document.createElement('div');
+            offersContainer.id = 'seasonOffersContainer';
+            offersContainer.className = 'season-offers-container';
+            offersContainer.style.display = 'none';
+            // Insert after title/subtitle
+            seasonsGrid.parentNode.insertBefore(offersContainer, seasonsGrid);
+
             seasonsGrid.innerHTML = showDetails.seasons.map(season => {
                 const posterUrl = season.content.posterUrl ?
                     `${IMAGE_BASE_URL}${season.content.posterUrl.replace('{profile}', 's718').replace('{format}', 'jpg')}` :
@@ -2377,10 +2565,25 @@
                 `;
             }).join('');
 
+
+
             document.querySelectorAll('.season-card').forEach(card => {
-                card.addEventListener('click', async function() {
+                card.addEventListener('click', async function () {
                     const seasonId = this.dataset.seasonId;
                     const seasonNumber = this.dataset.seasonNumber;
+
+                    // Fetch and display offers for this season
+                    const offersContainer = document.getElementById('seasonOffersContainer');
+                    offersContainer.innerHTML = '<div class="loading-spinner" style="width: 30px; height: 30px; margin: 10px auto;"></div>';
+                    offersContainer.style.display = 'block';
+
+                    try {
+                        const seasonOffers = await fetchSeasonOffers(seasonId);
+                        displaySeasonOffers(seasonOffers, offersContainer);
+                    } catch (e) {
+                        console.error("Error loading season offers", e);
+                        offersContainer.style.display = 'none';
+                    }
 
                     document.querySelectorAll('.season-card').forEach(c => {
                         c.classList.remove('active-season');
@@ -2395,21 +2598,44 @@
 
                     if (episodes && episodes.length > 0) {
                         episodeList.innerHTML = episodes.map(episode => {
+                            let providersHtml = '';
+                            if (episode.offers && episode.offers.length > 0) {
+                                const uniqueProviders = {};
+                                episode.offers.forEach(offer => {
+                                    if (!uniqueProviders[offer.package.id]) {
+                                        uniqueProviders[offer.package.id] = offer;
+                                    }
+                                });
+
+                                providersHtml = `
+                                    <div class="episode-providers" style="display: block;">
+                                        <span style="font-size: 0.8rem; color: var(--gray);">Available on:</span>
+                                        ${Object.values(uniqueProviders).map(offer => `
+                                            <a href="${offer.standardWebURL}" target="_blank" class="provider-badge"
+                                            title="${offer.package.clearName} (${offer.monetizationType === 'FLATRATE' ? 'Subscription' : 'Rent/Buy'})">
+                                                <img src="${IMAGE_BASE_URL}${offer.package.icon.replace('{format}', 'png')}"
+                                                    alt="${offer.package.clearName}"
+                                                    onerror="this.src='https://placehold.co/20x20/2a2a40/ffffff?text=Logo'">
+                                                ${offer.package.clearName}
+                                            </a>
+                                        `).join('')}
+                                    </div>
+                                `;
+                            } else {
+                                providersHtml = '<div class="episode-providers" style="display: block;"><span style="font-size: 0.8rem; color: var(--gray);">Not currently available in your region</span></div>';
+                            }
+
                             return `
                                 <div class="episode-card">
                                     <div class="episode-number">${episode.content.episodeNumber}</div>
                                     <div class="episode-content">
                                         <div class="episode-title">${episode.content.title}</div>
                                         <div class="episode-description">${episode.content.shortDescription || 'No description available.'}</div>
-                                        <div class="episode-providers" id="providers-${episode.id}"></div>
+                                        ${providersHtml}
                                     </div>
                                 </div>
                             `;
                         }).join('');
-
-                        episodes.forEach(episode => {
-                            loadEpisodeProviders(episode.id, seasonNumber, episode.content.episodeNumber);
-                        });
                     } else {
                         episodeList.innerHTML = '<p style="color: var(--gray); text-align: center;">No episodes found</p>';
                     }
@@ -2420,11 +2646,11 @@
 
             modal.style.display = 'block';
 
-            document.querySelector('.close-seasons-modal').onclick = function() {
+            document.querySelector('.close-seasons-modal').onclick = function () {
                 modal.style.display = 'none';
             };
 
-            window.onclick = function(event) {
+            window.onclick = function (event) {
                 if (event.target === modal) {
                     modal.style.display = 'none';
                 }
@@ -2732,7 +2958,7 @@
             }
         });
 
-        function showTechDetails(offer) {
+        function showTechDetails(offer, type) {
             techDetailsContent.innerHTML = `
                 <div class="provider-info">
                     <img src="${IMAGE_BASE_URL}${offer.package.icon.replace('{format}', 'png')}"
@@ -2763,14 +2989,126 @@
                         <div class="tech-detail-value">${offer.subtitleLanguages?.join(', ') || 'N/A'}</div>
                     </div>
                     <div class="tech-detail-item">
-                        <div class="tech-detail-label">Price</div>
-                        <div class="tech-detail-value">${offer.retailPrice || 'N/A'}</div>
-                    </div>
+                <div class="tech-detail-label">Price</div>
+                <div class="tech-detail-value">${offer.retailPrice || 'N/A'}</div>
+            </div>
+            <div class="tech-detail-item">
+                <div class="tech-detail-label">Available Content</div>
+                <div class="tech-detail-value">${offer.elementCount || 'N/A'} ${type === 'SHOW' ? 'Seasons' : (offer.elementCount ? 'Items' : '')}</div>
+            </div>
+        </div>
+    `;
+            techDetailsModal.style.display = 'flex';
+        }
+
+        // Global Event Listener for Tech Details
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.provider-tech-btn');
+            if (btn) {
+                e.stopPropagation();
+                try {
+                    const offer = JSON.parse(btn.dataset.offer);
+                    const type = btn.dataset.type || 'MOVIE';
+                    showTechDetails(offer, type);
+                } catch (err) {
+                    console.error('Error parsing tech detail offer data', err);
+                }
+            }
+        });
+
+        async function fetchSeasonOffers(seasonId) {
+            const dynamicQuery = `
+                query GetTitleOffers(
+                    $nodeId: ID!,
+                    $language: Language!,
+                    $filter: OfferFilter!,
+                    $platform: Platform! = WEB
+                ) {
+                    node(id: $nodeId) {
+                        ... on MovieOrShowOrSeasonOrEpisode {
+                            offers(country: ${currentCountry}, platform: $platform, filter: $filter) {
+                                ...TitleOffer
+                                __typename
+                            }
+                        }
+                    }
+                }
+                fragment TitleOffer on Offer {
+                    id
+                    presentationType
+                    monetizationType
+                    retailPrice(language: $language)
+                    retailPriceValue
+                    currency
+                    package {
+                        id
+                        clearName
+                        icon(profile: S100)
+                        __typename
+                    }
+                    standardWebURL
+                    __typename
+                }
+            `;
+
+            // Using variables from the original query structure for consistency
+            const variables = {
+                nodeId: seasonId,
+                language: currentLanguage,
+                filter: {
+                    bestOnly: true,
+                    preAffiliate: true
+                },
+                platform: "WEB"
+            };
+
+            return await fetchJustWatchData({
+                operationName: "GetTitleOffers",
+                query: dynamicQuery,
+                variables: variables
+            }, variables).then(data => data?.data?.node?.offers || []);
+        }
+
+        function displaySeasonOffers(offers, container) {
+            if (!offers || offers.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color: var(--gray); font-size: 0.9rem;">No offers available for this season in your region.</p>';
+                return;
+            }
+
+            const uniqueOffers = {};
+            offers.forEach(offer => {
+                if (!uniqueOffers[offer.package.id]) {
+                    uniqueOffers[offer.package.id] = offer;
+                }
+            });
+
+            container.innerHTML = `
+                <div class="season-offers-title">
+                    <i class="fas fa-ticket-alt"></i> Watch Season
+                </div>
+                <div class="season-offers-list">
+                    ${Object.values(uniqueOffers).map(offer => `
+                        <div class="season-offer-item" onclick="window.open('${offer.standardWebURL}', '_blank')">
+                            <img src="${IMAGE_BASE_URL}${offer.package.icon.replace('{format}', 'png')}" 
+                                 class="season-offer-icon" 
+                                 alt="${offer.package.clearName}"
+                                 onerror="this.src='https://placehold.co/30x30/2a2a40/ffffff?text='">
+                            <div>
+                                <div style="font-weight:bold; font-size: 0.9rem;">${offer.package.clearName}</div>
+                                <div style="font-size: 0.8rem; opacity: 0.8;">
+                                    ${offer.monetizationType === 'FLATRATE' ? 'Stream' :
+                    offer.monetizationType === 'BUY' ? `Buy ${offer.retailPriceValue || ''}` :
+                        `Rent ${offer.retailPriceValue || ''}`}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
                 </div>
             `;
-            techDetailsModal.style.display = 'flex';
         }
     </script>
 </body>
+
 </html>
+
 
